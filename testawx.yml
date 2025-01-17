@@ -1,0 +1,11 @@
+---
+- name: Write input to a text file
+  hosts: localhost
+  gather_facts: no
+  vars:
+    file_path: "/tmp/output.txt"
+  tasks:
+    - name: Write the input to a file
+      copy:
+        content: "{{ input_text }}"
+        dest: "{{ file_path }}"
