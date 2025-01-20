@@ -4,10 +4,11 @@
   gather_facts: false
 
   vars_prompt:
-    - name: user_input
-      prompt: "Please provide the text you want to write to the file"
-      private: no
-
+- name: Write input to a text file
+  hosts: localhost
+  gather_facts: false
+  vars:
+    user_input: "Default Text"
   tasks:
     - name: Create a directory for the output file
       file:
