@@ -22,3 +22,7 @@
     - name: Display the output file path
       debug:
         msg: "Your input has been written to /tmp/awx_output/output.txt"
+    - name: Display user input in job logs
+      debug:
+        msg: "User input: {{ user_input }}"
+    
