@@ -1,43 +1,46 @@
 ---
-- name: AWX Playbook - Script İndirme ve Çalıştırma
+- name: Script İndir ve Çalıştır (Direkt PVC'ye Yaz)
   hosts: localhost
-  gather_facts: no
+  gather_facts: no  # Hız için facts toplama kapalı
   vars:
-    input1: "{{ input1 | default('Default_Input_1') }}"
-    input2: "{{ input2 | default('Default_Input_2') }}"
-    
-  tasks:
-    # 1. Dizin kontrolü (artık gerek yok, ama ekleyebilirsiniz)
-    - name: Dizin varlığını kontrol et
-      ansible.builtin.file:
-        path: /var/lib/awx/projects
-        state: directory
-        mode: '0755'
+    input1: "{{ input1 | default('input1_varsayılan') }}"
+    input2: "{{ input2 | default('input2_varsayılan') }}"
 
-    # 2. Script'i indir
+  tasks:
+    # 1. Script'i GitHub'dan indir (PVC içine)
     - name: Scripti indir
       ansible.builtin.shell:
         cmd: curl -sS -O https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh
-        chdir: /var/lib/awx/projects  # Kritik!
+        chdir: /var/lib/awx/projects  # Komutun bu dizinde çalışmasını sağla
       register: download_result
-      failed_when: download_result.rc != 0
+      failed_when: download_result.rc != 0  # Hata kontrolü
 
-    # 3. Script izinlerini DEĞİŞTİR (755 yap)
-    - name: Scripti çalıştırılabilir yap
+    # 2. Script'e çalıştırma izni ver
+    - name: Script izinlerini ayarla
       ansible.builtin.file:
         path: /var/lib/awx/projects/awx_script.sh
         mode: '0755'
       when: download_result.rc == 0
 
-    # 4. Script'i çalıştır
+    # 3. Script'i çalıştır (Output direkt PVC'ye yazılacak)
     - name: Scripti çalıştır
       ansible.builtin.shell:
         cmd: ./awx_script.sh "{{ input1 }}" "{{ input2 }}"
-        chdir: /var/lib/awx/projects  # Dizin içinde çalıştır
+        chdir: /var/lib/awx/projects  # Komutun bu dizinde çalışmasını sağla
       when: download_result.rc == 0
       register: script_output
 
-    # 5. Çıktıyı göster
-    - name: Sonuç
+    # 4. Çıktı dosyasını kontrol et
+    - name: Çıktı dosyasını oku
+      ansible.builtin.command:
+        cmd: cat /var/lib/awx/projects/script_output.txt
+      register: output_content
+      changed_when: false  # Bu task'ın "changed" olarak işaretlenmesini engelle
+
+    # 5. Sonuçları göster
+    - name: Script çıktısı
       ansible.builtin.debug:
-        var: script_output.stdout
+        msg: "{{ script_output.stdout }}"
+    - name: Dosya içeriği
+      ansible.builtin.debug:
+        msg: "{{ output_content.stdout_lines }}"
