@@ -8,11 +8,17 @@
     script_url: "https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh"
     output_file: "/var/lib/awx/projects/output.txt"
   tasks:
+    - name: Ensure projects directory exists
+      file:
+        path: /var/lib/awx/projects
+        state: directory
+        mode: '0755'
+
     - name: Download the script from GitHub
       get_url:
         url: "{{ script_url }}"
         dest: "/var/lib/awx/projects/awx_script.sh"
-        mode: '0755'  # Scripte çalıştırma izni ver
+        mode: '0755'
 
     - name: Run the script with inputs
       command: /bin/bash /var/lib/awx/projects/awx_script.sh "{{ input1 }}" "{{ input2 }}"
