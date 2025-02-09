@@ -1,26 +1,49 @@
 ---
-- name: AWX Playbook - Script İndirme ve Çalıştırma (PVC Kullanımı)
+- name: AWX Playbook - Script İndirme ve Çalıştırma
   hosts: localhost
-  gather_facts: no
+  gather_facts: no  # Performans için facts toplama kapalı
   vars:
-    input1: "{{ input1 | default('Default Input 1') }}"
-    input2: "{{ input2 | default('Default Input 2') }}"
-
+    input1: "{{ input1 | default('Default_Input_1') }}"
+    input2: "{{ input2 | default('Default_Input_2') }}"
+    
   tasks:
-    - name: Projects dizinini oluştur (PVC için)
-      file:
+    # 1. Dizin Kontrolü (Zaten varsa bu task atlanır)
+    - name: /var/lib/awx/projects dizinini kontrol et
+      ansible.builtin.file:
         path: /var/lib/awx/projects
         state: directory
-        mode: '0777'
+        mode: '0755'  # AWX kullanıcısına yazma izni ver
 
-    - name: GitHub'dan scripti çek
-      shell:
-        cmd: curl -o awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh
-        chdir: /var/lib/awx/projects
+    # 2. Script'i GitHub'dan indir
+    - name: Scripti indir (PVC içine)
+      ansible.builtin.shell:
+        cmd: curl -sS -o awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh
+        chdir: /var/lib/awx/projects  # Kritik önemde!
+      register: download_result
+      failed_when: download_result.rc != 0  # Hata durumunda fail
 
-    - name: Script dosyasının izinlerini değiştir
-      file:
+    # 3. Script izinlerini ayarla
+    - name: Scripti çalıştırılabilir yap
+      ansible.builtin.file:
         path: /var/lib/awx/projects/awx_script.sh
         mode: '0755'
+      when: download_result.rc == 0
 
-    # Diğer task'lar aynı kalabilir...
+    # 4. Script varlığını kontrol et
+    - name: Script dosyası var mı?
+      ansible.builtin.stat:
+        path: /var/lib/awx/projects/awx_script.sh
+      register: script_stat
+
+    # 5. Script'i çalıştır (PVC üzerinden)
+    - name: Scripti parametrelerle çalıştır
+      ansible.builtin.shell:
+        cmd: /bin/bash awx_script.sh "{{ input1 }}" "{{ input2 }}"
+        chdir: /var/lib/awx/projects  # Dizin içinde çalıştır
+      when: script_stat.stat.exists  # Sadece dosya varsa çalıştır
+      register: script_output
+
+    # 6. Çıktıyı göster
+    - name: Script çıktısı
+      ansible.builtin.debug:
+        var: script_output.stdout
