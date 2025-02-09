@@ -1,29 +1,15 @@
 ---
-- name: Write input to a text file
-  hosts: localhost
-  gather_facts: false
-
-  vars_prompt:
-- name: Write input to a text file
-  hosts: localhost
-  gather_facts: false
+- name:script çalıştırma
+  hosts: all
+  become: yes
   vars:
-    user_input: "Default Text"
+    input1: "{{ input1 | default('varsayilan1') }}"
+    input2: "{{ input2 | default('varsayilan2') }}"
   tasks:
-    - name: Create a directory for the output file
-      file:
-        path: /tmp/awx_output
-        state: directory
+    - name: Inputları parametre olarak göndererek script'i çalıştır
+      command: "/usr/local/bin/print_hostname.sh {{ input1 }} {{ input2 }}"
+      register: script_output
 
-    - name: Write user input to a text file
-      copy:
-        content: "{{ user_input }}"
-        dest: /tmp/awx_output/output.txt
-
-    - name: Display the output file path
+    - name: Script çıktısını görüntüle
       debug:
-        msg: "Your input has been written to /tmp/awx_output/output.txt"
-    - name: Display user input in job logs
-      debug:
-        msg: "User input: {{ user_input }}"
-    
+        var: script_output.stdout
