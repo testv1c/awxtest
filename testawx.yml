@@ -23,14 +23,22 @@
 
     - name: GitHub'dan scripti çek
       get_url:
-        url: "https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh"
+        url: "https://raw.githubusercontent.com/KULLANICI_ADI/REPO_ADI/main/awx_script.sh"
         dest: "/tmp/awx_script.sh"
         mode: '0755'
 
-    - name: Dışarıdan scripti çalıştır
-      command: /bin/bash /tmp/awx_script.sh
+    - name: Dışarıdan scripti parametreler ile çalıştır
+      command: /bin/bash /tmp/awx_script.sh "{{ input1 }}" "{{ input2 }}"
       register: script_output
 
     - name: Script çıktısını göster
       debug:
         msg: "{{ script_output.stdout }}"
+
+    - name: Oluşturulan dosyanın içeriğini oku
+      command: cat /tmp/script_output.txt
+      register: file_output
+
+    - name: Dosya içeriğini ekrana yazdır
+      debug:
+        msg: "{{ file_output.stdout }}"
