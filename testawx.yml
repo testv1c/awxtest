@@ -7,33 +7,33 @@
     input2: "{{ input2 | default('input2_varsayılan') }}"
 
   tasks:
-    # 1. Dizin kontrolünü KALDIR (Zaten var olduğu için gerek yok)
-    # - name: Dizin kontrolü
-    #   ansible.builtin.file:
-    #     path: /var/lib/awx/projects
-    #     state: directory
-    #     mode: '0755'
-
-    # 2. Scripti indir
+    # 1. Scripti GitHub'dan PVC dizinine indir
     - name: Scripti indir
       ansible.builtin.shell:
         cmd: curl -sS -O https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh
-        chdir: /var/lib/awx/projects  # Komutun bu dizinde çalışması için
+        chdir: /var/lib/awx/projects  # Kritik! Komut bu dizinde çalışacak
+      register: download_result
+      failed_when: download_result.rc != 0  # Hata durumunda fail
 
-    # 3. Script izinlerini ayarla
-    - name: Scripti çalıştırılabilir yap
+    # 2. Script'e çalıştırma izni ver
+    - name: Script izinlerini ayarla
       ansible.builtin.file:
-        path: /var/lib/awx/projects/awx_script.sh
+        path: /var/lib/awx/projects/awx_script.sh  # Tam yol belirtilmeli
         mode: '0755'
+      when: download_result.rc == 0  # Sadece indirme başarılıysa
 
-    # 4. Scripti çalıştır
+    # 3. Scripti parametrelerle çalıştır
     - name: Scripti çalıştır
       ansible.builtin.shell:
         cmd: ./awx_script.sh "{{ input1 }}" "{{ input2 }}"
-        chdir: /var/lib/awx/projects
+        chdir: /var/lib/awx/projects  # Komut bu dizinde çalışacak
       register: script_output
+      when: download_result.rc == 0  # Sadece indirme başarılıysa
 
-    # 5. Çıktıyı göster
-    - name: Sonuç
+    # 4. Çıktıyı ve hataları göster
+    - name: Sonuçları göster
       ansible.builtin.debug:
-        msg: "{{ script_output.stdout }}"
+        msg: |
+          STDOUT: {{ script_output.stdout }}
+          STDERR: {{ script_output.stderr }}
+      when: script_output is defined
