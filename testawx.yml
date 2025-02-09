@@ -1,5 +1,5 @@
 ---
-- name: AWX Playbook - Input ve Script Çalıştırma
+- name: AWX Playbook - Script İndirme ve Çalıştırma
   hosts: localhost
   gather_facts: no
   vars:
@@ -7,17 +7,10 @@
     input2: "{{ input2 | default('Default Input 2') }}"
 
   tasks:
-    - name: Kullanıcıdan alınan değişkenleri göster
-      debug:
-        msg: 
-          - "Girdi 1: {{ input1 }}"
-          - "Girdi 2: {{ input2 }}"
-
-    - name: GitHub'dan scripti çek
-      get_url:
-        url: "https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh"
-        dest: "/tmp/awx_script.sh"
-        mode: '0755'
+    - name: GitHub'dan scripti çek (curl ile)
+      shell: "curl -o /tmp/awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh"
+      args:
+        creates: /tmp/awx_script.sh
 
     - name: İndirilen scripti kontrol et
       stat:
