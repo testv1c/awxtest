@@ -7,7 +7,7 @@
     input2: "{{ input2 | default('Default Input 2') }}"
 
   tasks:
-    - name: GitHub'dan scripti çek (`sh` içinde çalıştır)
+    - name: GitHub'dan scripti çek (sh içinde çalıştır)
       shell: "/bin/sh -c 'curl -o /tmp/awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh'"
       args:
         executable: /bin/sh
@@ -21,11 +21,11 @@
       debug:
         msg: "Script mevcut mu? {{ script_status.stat.exists }}"
 
-    - name: `/tmp` dizininde hangi dosyalar var? (Debug amaçlı)
+    - name: "/tmp dizininde hangi dosyalar var? (Debug amaçlı)"
       shell: "ls -l /tmp"
       register: tmp_files
 
-    - name: `/tmp` içeriği
+    - name: "/tmp içeriği"
       debug:
         msg: "{{ tmp_files.stdout_lines }}"
 
