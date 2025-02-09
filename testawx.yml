@@ -1,39 +1,31 @@
----
 - name: Script Çalıştırma (PVC Üzerinde)
   hosts: localhost
   gather_facts: no
   vars:
-    input1: "{{ input1 | default('input1_varsayılan') }}"
-    input2: "{{ input2 | default('input2_varsayılan') }}"
+    input1: "{{ input1 }}"
+    input2: "{{ input2 }}"
 
   tasks:
-    # 1. Scripti GitHub'dan PVC dizinine indir
-    - name: Scripti indir
-      ansible.builtin.shell:
-        cmd: curl -sS -O https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh
-        chdir: /var/lib/awx/projects  # Kritik! Komut bu dizinde çalışacak
-      register: download_result
-      failed_when: download_result.rc != 0  # Hata durumunda fail
-
-    # 2. Script'e çalıştırma izni ver
-    - name: Script izinlerini ayarla
+    - name: Dizin oluştur (AWX kullanıcısı için)
       ansible.builtin.file:
-        path: /var/lib/awx/projects/awx_script.sh  # Tam yol belirtilmeli
+        path: /var/lib/awx/projects
+        state: directory
         mode: '0755'
-      when: download_result.rc == 0  # Sadece indirme başarılıysa
+        owner: awx
+        group: 1000
 
-    # 3. Scripti parametrelerle çalıştır
+    - name: Scripti indir
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/your-repo/awx_script.sh
+        dest: /var/lib/awx/projects/awx_script.sh
+        mode: '0755'
+
     - name: Scripti çalıştır
       ansible.builtin.shell:
         cmd: ./awx_script.sh "{{ input1 }}" "{{ input2 }}"
-        chdir: /var/lib/awx/projects  # Komut bu dizinde çalışacak
+        chdir: /var/lib/awx/projects
       register: script_output
-      when: download_result.rc == 0  # Sadece indirme başarılıysa
 
-    # 4. Çıktıyı ve hataları göster
-    - name: Sonuçları göster
+    - name: Çıktıyı göster
       ansible.builtin.debug:
-        msg: |
-          STDOUT: {{ script_output.stdout }}
-          STDERR: {{ script_output.stderr }}
-      when: script_output is defined
+        msg: "{{ script_output.stdout }}"
