@@ -13,8 +13,8 @@
           - "Girdi 1: {{ input1 }}"
           - "Girdi 2: {{ input2 }}"
 
-    - name: Host ismini al ve göster (Tam Yolu ile)
-      command: /bin/hostname
+    - name: Host ismini `/etc/hostname` dosyasından al
+      command: cat /etc/hostname
       register: hostname_output
 
     - name: Host ismini ekrana yazdır
