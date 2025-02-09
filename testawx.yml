@@ -24,18 +24,18 @@
     - name: GitHub'dan scripti çek
       get_url:
         url: "https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh"
-        dest: "/var/lib/awx/projects/script_output.txt"
+        dest: "/tmp/custom_script.sh"
         mode: '0755'
 
     - name: Dışarıdan scripti parametreler ile çalıştır
-      shell: "/bin/bash /tmp/awx_script.sh '{{ input1 }}' '{{ input2 }}' | tee /var/lib/awx/projects/script_output.txt"
+      shell: "/bin/bash /tmp/custom_script.sh '{{ input1 }}' '{{ input2 }}'"
       register: script_output
 
     - name: Script çıktısını göster
       debug:
         msg: "{{ script_output.stdout }}"
 
-    - name: Oluşturulan dosyanın içeriğini oku
+    - name: Kalıcı volume içindeki dosyanın içeriğini oku
       command: cat /var/lib/awx/projects/script_output.txt
       register: file_output
 
