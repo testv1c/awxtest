@@ -1,5 +1,5 @@
 ---
-- name: AWX Playbook - Script İndirme ve Çalıştırma (`sh` içinde)
+- name: AWX Playbook - Script İndirme ve Çalıştırma (Kalıcı Yere Kayıt)
   hosts: localhost
   gather_facts: no
   vars:
@@ -7,30 +7,27 @@
     input2: "{{ input2 | default('Default Input 2') }}"
 
   tasks:
-    - name: GitHub'dan scripti çek (sh içinde çalıştır)
-      shell: "/bin/sh -c 'curl -o /tmp/awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh'"
+    - name: GitHub'dan scripti çek (`sh` içinde çalıştır)
+      shell: "/bin/sh -c 'curl -o /var/lib/awx/projects/awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh'"
       args:
         executable: /bin/sh
 
+    - name: Script dosyasının izinlerini değiştir
+      file:
+        path: /var/lib/awx/projects/awx_script.sh
+        mode: '0755'
+
     - name: İndirilen scripti kontrol et
       stat:
-        path: /tmp/awx_script.sh
+        path: /var/lib/awx/projects/awx_script.sh
       register: script_status
 
     - name: Script dosyasının var olup olmadığını göster
       debug:
         msg: "Script mevcut mu? {{ script_status.stat.exists }}"
 
-    - name: "/tmp dizininde hangi dosyalar var? (Debug amaçlı)"
-      shell: "ls -l /tmp"
-      register: tmp_files
-
-    - name: "/tmp içeriği"
-      debug:
-        msg: "{{ tmp_files.stdout_lines }}"
-
-    - name: Dışarıdan scripti parametreler ile çalıştır
-      shell: "/bin/bash /tmp/awx_script.sh '{{ input1 }}' '{{ input2 }}'"
+    - name: Dışarıdan scripti parametreler ile çalıştır (PVC içinden)
+      shell: "/bin/bash /var/lib/awx/projects/awx_script.sh '{{ input1 }}' '{{ input2 }}'"
       register: script_output
       when: script_status.stat.exists
 
