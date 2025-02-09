@@ -23,7 +23,7 @@
 
     - name: GitHub'dan scripti çek
       get_url:
-        url: "https://raw.githubusercontent.com/KULLANICI_ADI/REPO_ADI/main/awx_script.sh"
+        url: "https://github.com/testv1c/awxscript/main/awx_script.sh"
         dest: "/tmp/awx_script.sh"
         mode: '0755'
 
