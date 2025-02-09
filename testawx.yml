@@ -7,12 +7,12 @@
     input2: "{{ input2 | default('input2_varsayılan') }}"
 
   tasks:
-    # 1. Dizini oluştur (Zaten varsa etkisiz)
-    - name: Dizin kontrolü
-      ansible.builtin.file:
-        path: /var/lib/awx/projects
-        state: directory
-        mode: '0755'
+    # 1. Dizin kontrolünü KALDIR (Zaten var olduğu için gerek yok)
+    # - name: Dizin kontrolü
+    #   ansible.builtin.file:
+    #     path: /var/lib/awx/projects
+    #     state: directory
+    #     mode: '0755'
 
     # 2. Scripti indir
     - name: Scripti indir
@@ -20,14 +20,20 @@
         cmd: curl -sS -O https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh
         chdir: /var/lib/awx/projects  # Komutun bu dizinde çalışması için
 
-    # 3. Scripti çalıştır
+    # 3. Script izinlerini ayarla
+    - name: Scripti çalıştırılabilir yap
+      ansible.builtin.file:
+        path: /var/lib/awx/projects/awx_script.sh
+        mode: '0755'
+
+    # 4. Scripti çalıştır
     - name: Scripti çalıştır
       ansible.builtin.shell:
         cmd: ./awx_script.sh "{{ input1 }}" "{{ input2 }}"
         chdir: /var/lib/awx/projects
       register: script_output
 
-    # 4. Çıktıyı göster
+    # 5. Çıktıyı göster
     - name: Sonuç
       ansible.builtin.debug:
         msg: "{{ script_output.stdout }}"
