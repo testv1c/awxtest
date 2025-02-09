@@ -1,38 +1,44 @@
 ---
-- name: Run Script and Save Output
+- name: AWX Playbook - Script İndirme ve Çalıştırma (PVC Kullanımı)
   hosts: localhost
   gather_facts: no
   vars:
-    input1: "{{ input1 }}"
-    input2: "{{ input2 }}"
-    script_url: "https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh"
-    output_file: "/var/lib/awx/projects/output.txt"
+    input1: "{{ input1 | default('Default Input 1') }}"
+    input2: "{{ input2 | default('Default Input 2') }}"
+
   tasks:
-    - name: Ensure projects directory exists
+    - name: GitHub'dan scripti çek (`sh` içinde çalıştır, kalıcı volume içine kaydet)
+      shell: "/bin/sh -c 'curl -o /var/lib/awx/projects/awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh'"
+      args:
+        executable: /bin/sh
+
+    - name: Script dosyasının izinlerini değiştir
       file:
-        path: /var/lib/awx/projects
-        state: directory
+        path: /var/lib/awx/projects/awx_script.sh
         mode: '0755'
 
-    - name: Download the script from GitHub
-      get_url:
-        url: "{{ script_url }}"
-        dest: "/var/lib/awx/projects/awx_script.sh"
-        mode: '0755'
+    - name: İndirilen scripti kontrol et
+      stat:
+        path: /var/lib/awx/projects/awx_script.sh
+      register: script_status
 
-    - name: Run the script with inputs
-      command: /bin/bash /var/lib/awx/projects/awx_script.sh "{{ input1 }}" "{{ input2 }}"
+    - name: Script dosyasının var olup olmadığını göster
+      debug:
+        msg: "Script mevcut mu? {{ script_status.stat.exists }}"
+
+    - name: Dışarıdan scripti parametreler ile çalıştır (PVC içinden)
+      shell: "/bin/bash /var/lib/awx/projects/awx_script.sh '{{ input1 }}' '{{ input2 }}'"
       register: script_output
+      when: script_status.stat.exists
 
-    - name: Get hostname
-      command: hostname
-      register: hostname_output
+    - name: Script çıktısını göster
+      debug:
+        msg: "{{ script_output.stdout }}"
 
-    - name: Save outputs to a file
-      copy:
-        content: |
-          Input1: {{ input1 }}
-          Input2: {{ input2 }}
-          Script Output: {{ script_output.stdout }}
-          Hostname: {{ hostname_output.stdout }}
-        dest: "{{ output_file }}"
+    - name: Kalıcı volume içindeki dosyanın içeriğini oku
+      command: cat /var/lib/awx/projects/script_output.txt
+      register: file_output
+
+    - name: Dosya içeriğini ekrana yazdır
+      debug:
+        msg: "{{ file_output.stdout }}"
