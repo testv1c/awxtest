@@ -1,5 +1,5 @@
 ---
-- name: AWX Playbook - Script İndirme ve Çalıştırma
+- name: AWX Playbook - Script İndirme ve Çalıştırma (`sh` içinde)
   hosts: localhost
   gather_facts: no
   vars:
@@ -7,19 +7,27 @@
     input2: "{{ input2 | default('Default Input 2') }}"
 
   tasks:
-    - name: GitHub'dan scripti çek (curl ile)
-      shell: "curl -o /tmp/awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh"
+    - name: GitHub'dan scripti çek (`sh` içinde çalıştır)
+      shell: "/bin/sh -c 'curl -o /tmp/awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh'"
       args:
-        creates: /tmp/awx_script.sh
+        executable: /bin/sh
 
     - name: İndirilen scripti kontrol et
       stat:
         path: /tmp/awx_script.sh
       register: script_status
 
-    - name: Script dosyasının durumu
+    - name: Script dosyasının var olup olmadığını göster
       debug:
         msg: "Script mevcut mu? {{ script_status.stat.exists }}"
+
+    - name: `/tmp` dizininde hangi dosyalar var? (Debug amaçlı)
+      shell: "ls -l /tmp"
+      register: tmp_files
+
+    - name: `/tmp` içeriği
+      debug:
+        msg: "{{ tmp_files.stdout_lines }}"
 
     - name: Dışarıdan scripti parametreler ile çalıştır
       shell: "/bin/bash /tmp/awx_script.sh '{{ input1 }}' '{{ input2 }}'"
