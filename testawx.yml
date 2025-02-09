@@ -7,28 +7,25 @@
     input2: "{{ input2 | default('input2_varsayılan') }}"
 
   tasks:
-    # 1. Scripti GitHub'dan indir
+    # 1. Dizini oluştur (Zaten varsa etkisiz)
+    - name: Dizin kontrolü
+      ansible.builtin.file:
+        path: /var/lib/awx/projects
+        state: directory
+        mode: '0755'
+
+    # 2. Scripti indir
     - name: Scripti indir
       ansible.builtin.shell:
         cmd: curl -sS -O https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh
-        chdir: /var/lib/awx/projects  # PVC'ye yazmak için kritik
-      register: download_result
-      failed_when: download_result.rc != 0
+        chdir: /var/lib/awx/projects  # Komutun bu dizinde çalışması için
 
-    # 2. Scripti çalıştırılabilir yap
-    - name: Script izinlerini ayarla
-      ansible.builtin.file:
-        path: /var/lib/awx/projects/awx_script.sh
-        mode: '0755'
-      when: download_result.rc == 0
-
-    # 3. Scripti çalıştır (Output PVC'ye yazılacak)
+    # 3. Scripti çalıştır
     - name: Scripti çalıştır
       ansible.builtin.shell:
         cmd: ./awx_script.sh "{{ input1 }}" "{{ input2 }}"
-        chdir: /var/lib/awx/projects  # Komutun PVC dizininde çalışması için
+        chdir: /var/lib/awx/projects
       register: script_output
-      when: download_result.rc == 0
 
     # 4. Çıktıyı göster
     - name: Sonuç
