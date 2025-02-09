@@ -1,5 +1,5 @@
 ---
-- name: AWX Playbook - Script İndirme ve Çalıştırma (Kalıcı Yere Kayıt)
+- name: AWX Playbook - Script İndirme ve Çalıştırma (PVC Kullanımı)
   hosts: localhost
   gather_facts: no
   vars:
@@ -7,7 +7,7 @@
     input2: "{{ input2 | default('Default Input 2') }}"
 
   tasks:
-    - name: GitHub'dan scripti çek (`sh` içinde çalıştır)
+    - name: GitHub'dan scripti çek (`sh` içinde çalıştır, kalıcı volume içine kaydet)
       shell: "/bin/sh -c 'curl -o /var/lib/awx/projects/awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh'"
       args:
         executable: /bin/sh
