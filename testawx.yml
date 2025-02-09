@@ -1,46 +1,36 @@
 ---
-- name: Script İndir ve Çalıştır (Direkt PVC'ye Yaz)
+- name: Script Çalıştırma (PVC Üzerinde)
   hosts: localhost
-  gather_facts: no  # Hız için facts toplama kapalı
+  gather_facts: no
   vars:
     input1: "{{ input1 | default('input1_varsayılan') }}"
     input2: "{{ input2 | default('input2_varsayılan') }}"
 
   tasks:
-    # 1. Script'i GitHub'dan indir (PVC içine)
+    # 1. Scripti GitHub'dan indir
     - name: Scripti indir
       ansible.builtin.shell:
         cmd: curl -sS -O https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh
-        chdir: /var/lib/awx/projects  # Komutun bu dizinde çalışmasını sağla
+        chdir: /var/lib/awx/projects  # PVC'ye yazmak için kritik
       register: download_result
-      failed_when: download_result.rc != 0  # Hata kontrolü
+      failed_when: download_result.rc != 0
 
-    # 2. Script'e çalıştırma izni ver
+    # 2. Scripti çalıştırılabilir yap
     - name: Script izinlerini ayarla
       ansible.builtin.file:
         path: /var/lib/awx/projects/awx_script.sh
         mode: '0755'
       when: download_result.rc == 0
 
-    # 3. Script'i çalıştır (Output direkt PVC'ye yazılacak)
+    # 3. Scripti çalıştır (Output PVC'ye yazılacak)
     - name: Scripti çalıştır
       ansible.builtin.shell:
         cmd: ./awx_script.sh "{{ input1 }}" "{{ input2 }}"
-        chdir: /var/lib/awx/projects  # Komutun bu dizinde çalışmasını sağla
-      when: download_result.rc == 0
+        chdir: /var/lib/awx/projects  # Komutun PVC dizininde çalışması için
       register: script_output
+      when: download_result.rc == 0
 
-    # 4. Çıktı dosyasını kontrol et
-    - name: Çıktı dosyasını oku
-      ansible.builtin.command:
-        cmd: cat /var/lib/awx/projects/script_output.txt
-      register: output_content
-      changed_when: false  # Bu task'ın "changed" olarak işaretlenmesini engelle
-
-    # 5. Sonuçları göster
-    - name: Script çıktısı
+    # 4. Çıktıyı göster
+    - name: Sonuç
       ansible.builtin.debug:
         msg: "{{ script_output.stdout }}"
-    - name: Dosya içeriği
-      ansible.builtin.debug:
-        msg: "{{ output_content.stdout_lines }}"
