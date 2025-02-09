@@ -1,15 +1,36 @@
 ---
-- name:script çalıştırma
-  hosts: all
-  become: yes
+- name: AWX Playbook - Input ve Script Çalıştırma
+  hosts: localhost
+  gather_facts: no
   vars:
-    input1: "{{ input1 | default('varsayilan1') }}"
-    input2: "{{ input2 | default('varsayilan2') }}"
+    input1: "{{ input1 | default('Default Input 1') }}"
+    input2: "{{ input2 | default('Default Input 2') }}"
+
   tasks:
-    - name: Inputları parametre olarak göndererek script'i çalıştır
-      command: "/usr/local/bin/print_hostname.sh {{ input1 }} {{ input2 }}"
+    - name: Kullanıcıdan alınan değişkenleri göster
+      debug:
+        msg: 
+          - "Girdi 1: {{ input1 }}"
+          - "Girdi 2: {{ input2 }}"
+
+    - name: Host ismini al ve göster
+      command: hostname
+      register: hostname_output
+
+    - name: Host ismini ekrana yazdır
+      debug:
+        msg: "Bu playbook şu hostta çalıştı: {{ hostname_output.stdout }}"
+
+    - name: GitHub'dan scripti çek
+      get_url:
+        url: "https://raw.githubusercontent.com/testv1c/awxscript/main/custom_script.sh"
+        dest: "/tmp/awx_script.sh"
+        mode: '0755'
+
+    - name: Dışarıdan scripti çalıştır
+      command: /bin/bash /tmp/awx_script.sh
       register: script_output
 
-    - name: Script çıktısını görüntüle
+    - name: Script çıktısını göster
       debug:
-        var: script_output.stdout
+        msg: "{{ script_output.stdout }}"
