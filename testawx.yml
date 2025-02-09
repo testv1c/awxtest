@@ -13,8 +13,8 @@
           - "Girdi 1: {{ input1 }}"
           - "Girdi 2: {{ input2 }}"
 
-    - name: Host ismini al ve göster
-      command: hostname
+    - name: Host ismini al ve göster (Tam Yolu ile)
+      command: /bin/hostname
       register: hostname_output
 
     - name: Host ismini ekrana yazdır
@@ -28,7 +28,7 @@
         mode: '0755'
 
     - name: Dışarıdan scripti parametreler ile çalıştır
-      command: /bin/bash /tmp/awx_script.sh "{{ input1 }}" "{{ input2 }}"
+      shell: "/bin/bash /tmp/awx_script.sh '{{ input1 }}' '{{ input2 }}' | tee /tmp/script_output.txt"
       register: script_output
 
     - name: Script çıktısını göster
