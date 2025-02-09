@@ -7,38 +7,20 @@
     input2: "{{ input2 | default('Default Input 2') }}"
 
   tasks:
-    - name: GitHub'dan scripti çek (`sh` içinde çalıştır, kalıcı volume içine kaydet)
-      shell: "/bin/sh -c 'curl -o /var/lib/awx/projects/awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh'"
-      args:
-        executable: /bin/sh
+    - name: Projects dizinini oluştur (PVC için)
+      file:
+        path: /var/lib/awx/projects
+        state: directory
+        mode: '0777'
+
+    - name: GitHub'dan scripti çek
+      shell:
+        cmd: curl -o awx_script.sh https://raw.githubusercontent.com/testv1c/awxscript/main/awx_script.sh
+        chdir: /var/lib/awx/projects
 
     - name: Script dosyasının izinlerini değiştir
       file:
         path: /var/lib/awx/projects/awx_script.sh
         mode: '0755'
 
-    - name: İndirilen scripti kontrol et
-      stat:
-        path: /var/lib/awx/projects/awx_script.sh
-      register: script_status
-
-    - name: Script dosyasının var olup olmadığını göster
-      debug:
-        msg: "Script mevcut mu? {{ script_status.stat.exists }}"
-
-    - name: Dışarıdan scripti parametreler ile çalıştır (PVC içinden)
-      shell: "/bin/bash /var/lib/awx/projects/awx_script.sh '{{ input1 }}' '{{ input2 }}'"
-      register: script_output
-      when: script_status.stat.exists
-
-    - name: Script çıktısını göster
-      debug:
-        msg: "{{ script_output.stdout }}"
-
-    - name: Kalıcı volume içindeki dosyanın içeriğini oku
-      command: cat /var/lib/awx/projects/script_output.txt
-      register: file_output
-
-    - name: Dosya içeriğini ekrana yazdır
-      debug:
-        msg: "{{ file_output.stdout }}"
+    # Diğer task'lar aynı kalabilir...
